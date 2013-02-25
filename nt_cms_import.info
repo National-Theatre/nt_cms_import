@@ -1,0 +1,12 @@
+name = NT CMS Importer
+description = Import data from the main CMS.  This core module for access.
+core = 7.x
+; stylesheets[all][] =
+; scripts[] =
+; files[] =
+dependencies[] = oauth_common
+package = "National Theatre"
+php = 5.3
+version = 7.x-1.0 
+; configure =
+

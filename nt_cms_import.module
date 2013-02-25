@@ -1,0 +1,144 @@
+<?php
+/**
+ * @file
+ * @copyright The Royal National Theatre
+ * @author John-Paul Drawneek
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function nt_cms_import_menu() {
+  return array(
+    'admin/config/system/nt-cms-config' => array(
+      'title' => 'NT CMS Config',
+      'description' => 'Configure this site connection to the main NT CMS',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('nt_cms_import_admin_config'),
+      'access arguments' => array('Config CMS Connection'),
+      'type' => MENU_NORMAL_ITEM,
+      'file' => 'nt_cms_import.form.inc',
+    ),
+    'admin/config/system/nt-cms-config/access-token' => array(
+      'title' => 'CMS Config Access callback',
+      'description' => 'Configure this site connection to the main NT CMS',
+      'page callback' => 'nt_cms_import_access_callback',
+      'page arguments' => array(),
+      'access arguments' => array('Config CMS Connection'),
+      'type' => MENU_CALLBACK,
+      'file' => 'nt_cms_import.form.inc',
+    ),
+  );
+}
+/**
+ * Implements hook_permission().
+ */
+function nt_cms_import_permission() {
+  return array(
+    'Config CMS Connection' => array(
+      'title' => t('NT CMS connection config'),
+      'description' => t('Configure main NT CMS connection settings.'),
+    ),
+  );
+}
+/**
+ * Implements hook_theme().
+ */
+function nt_cms_import_theme($existing, $type, $theme, $path) {
+  return array();
+}
+/**
+ * Callback to get the auth token.
+ *
+ * @param array $form
+ *   Current from structure.
+ * @param array $form_state
+ *   Current form structure state.
+ *
+ * @return array
+ *   Form structure to be rendered.
+ */
+function nt_cms_import_config_get_token($form, &$form_state) {
+  $key = variable_get('nt_cms_import_cms_key', '');
+  $secret = variable_get('nt_cms_import_cms_secret', '');
+  $consumer = new \DrupalOAuthConsumer($key, $secret);
+  $client = new \DrupalOAuthClient($consumer);
+  $endpoint = variable_get(
+    'nt_cms_import_cms',
+    'http://cms.nationaltheatre.develop.local'
+  ) . '/oauth/request_token';
+  $r_token = $client->getRequestToken($endpoint);
+  variable_set('nt_cms_import_rtoken', serialize($r_token));
+  $options = array(
+    'query' => array(
+      'oauth_token' => $r_token->key,
+      'oauth_version' => 1.0,
+    ),
+  );
+  $redirect = variable_get(
+    'nt_cms_import_cms',
+    'http://cms.nationaltheatre.develop.local'
+  ) . '/oauth/authorize';
+  drupal_goto($redirect, $options);
+}
+/**
+ * Helper function to wrap url in OAuth details.
+ * @access private
+ *
+ * @param string $url
+ *   Url of the resource being requested.
+ *
+ * @return string
+ *   Url wrapped in OAuth details.
+ */
+function _nt_cms_import_login($url) {
+  $key = variable_get('nt_cms_import_cms_key', '');
+  $secret = variable_get('nt_cms_import_cms_secret', '');
+  $consumer = new DrupalOAuthConsumer($key, $secret, array());
+  $token = unserialize(variable_get('nt_cms_import_token'));
+  $result = DrupalOAuthRequest::from_consumer_and_token($consumer, $token, 'GET', $url);
+  $result->sign_request(new \OAuthSignatureMethod_HMAC_SHA1(), $consumer, $token);
+  return $result->to_url();
+}
+/**
+ * Helper to format getting a node data.
+ * @access private
+ *
+ * @param int $nid
+ *   NID of node to be recovered.
+ *
+ * @return Mixed
+ *   Either data or false if it fails.
+ */
+function _nt_cms_import_get_node($nid) {
+  $url = '/node/' . $nid . '.json';
+  return _nt_cms_import_do_call($url);
+}
+/**
+ * Helper to do call to remote resource to get data.
+ * @access private
+ *
+ * @param string $part_url
+ *   Relative path to resource.
+ *
+ * @return Mixed
+ *   Either data retreived or FALSE if it fails.
+ */
+function _nt_cms_import_do_call($part_url) {
+  $url_parts = variable_get(
+    'nt_cms_import_cms',
+    'http://cms.nationaltheatre.develop.local'
+  );
+  $url_parts .= '/' . variable_get('nt_cms_import_cms_endpoint', 'rest');
+  $url_parts .= $part_url;
+  $url = _nt_cms_import_login($url_parts);
+  $result = drupal_http_request($url, array('method' => 'GET'));
+  if ($result->code == 200) {
+    $data = json_decode($result->data);
+  }
+  else {
+    $data = FALSE;
+    watchdog('Import', '<pre>' . print_r($result, TRUE) . '</pre>');
+  }
+  return $data;
+}
