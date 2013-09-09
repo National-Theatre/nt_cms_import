@@ -28,6 +28,7 @@ function nt_cms_import_install() {
  */
 function nt_cms_import_uninstall() {
   variable_del('nt_cms_import_cms_www');
+  variable_del('nt_cms_import_cms_cf');
   variable_del('nt_cms_import_cms');
   variable_del('nt_cms_import_cms_endpoint');
   variable_del('nt_cms_import_cms_path');

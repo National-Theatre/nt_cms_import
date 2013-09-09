@@ -51,6 +51,11 @@ function nt_cms_import_admin_config($form, &$form_state) {
       '#title' => t('CMS URL'),
       '#default_value' => variable_get('nt_cms_import_cms', 'http://cms.nationaltheatre.develop.local'),
     ),
+    'nt_cms_import_cms_cf' => array(
+      '#type' => 'textfield',
+      '#title' => t('CMS CloudFront'),
+      '#default_value' => variable_get('nt_cms_import_cms_cf', 'http://d1wf8hd6ovssje.cloudfront.net'),
+    ),
     'nt_cms_import_cms_endpoint' => array(
       '#type' => 'textfield',
       '#title' => t('Rest End Point'),
