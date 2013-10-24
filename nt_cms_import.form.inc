@@ -1,6 +1,7 @@
 <?php
 /**
  * @file
+ * nt_cms_import.form.inc
  * @copyright The Royal National Theatre
  * @author John-Paul Drawneek <jdrawneek@nationaltheatre.org.uk>
  */
@@ -38,33 +39,49 @@ function nt_cms_import_access_callback() {
  *   Form structure to be rendered.
  */
 function nt_cms_import_admin_config($form, &$form_state) {
+  form_load_include($form_state, 'inc', 'nt_cms_import', 'nt_cms_import.form');
   $form['cms_paths'] = array(
     '#type'  => 'fieldset',
     '#title' => t('CMS Path settings'),
     'nt_cms_import_cms_www' => array(
-      '#type' => 'textfield',
-      '#title' => t('CMS Frontend URL'),
-      '#default_value' => variable_get('nt_cms_import_cms_www', 'http://www.nationaltheatre.develop.local'),
+      '#type'             => 'textfield',
+      '#title'            => t('CMS Frontend URL'),
+      '#default_value'    => variable_get(
+        'nt_cms_import_cms_www',
+        'http://www.nationaltheatre.develop.local'
+      ),
+      '#element_validate' => array('_nt_cms_import_config_validate'),
     ),
     'nt_cms_import_cms' => array(
-      '#type' => 'textfield',
-      '#title' => t('CMS URL'),
-      '#default_value' => variable_get('nt_cms_import_cms', 'http://cms.nationaltheatre.develop.local'),
+      '#type'             => 'textfield',
+      '#title'            => t('CMS URL'),
+      '#default_value'    => variable_get(
+        'nt_cms_import_cms',
+        'http://cms.nationaltheatre.develop.local'
+      ),
+      '#element_validate' => array('_nt_cms_import_config_validate'),
     ),
     'nt_cms_import_cms_cf' => array(
-      '#type' => 'textfield',
-      '#title' => t('CMS CloudFront'),
-      '#default_value' => variable_get('nt_cms_import_cms_cf', 'http://d1wf8hd6ovssje.cloudfront.net'),
+      '#type'             => 'textfield',
+      '#title'            => t('CMS CloudFront'),
+      '#default_value'    => variable_get(
+        'nt_cms_import_cms_cf',
+        'http://d1wf8hd6ovssje.cloudfront.net'
+      ),
+      '#element_validate' => array('_nt_cms_import_config_validate'),
     ),
     'nt_cms_import_cms_endpoint' => array(
-      '#type' => 'textfield',
-      '#title' => t('Rest End Point'),
+      '#type'          => 'textfield',
+      '#title'         => t('Rest End Point'),
       '#default_value' => variable_get('nt_cms_import_cms_endpoint', 'rest'),
     ),
     'nt_cms_import_cms_path' => array(
-      '#type' => 'textfield',
-      '#title' => t('Path to files on CMS'),
-      '#default_value' => variable_get('nt_cms_import_cms_path', '/sites/all/libraries/files'),
+      '#type'          => 'textfield',
+      '#title'         => t('Path to files on CMS'),
+      '#default_value' => variable_get(
+        'nt_cms_import_cms_path',
+        '/sites/all/libraries/files'
+      ),
     ),
   );
   $form['security'] = array(
@@ -93,4 +110,24 @@ function nt_cms_import_admin_config($form, &$form_state) {
     ),
   );
   return system_settings_form($form);
+}
+/**
+ * Validate the CMS url and remove trailing slash.
+ *
+ * @param array $element
+ *   Element to be validated.
+ * @param array $form_state
+ *   Current state of the form.
+ */
+function _nt_cms_import_config_validate($element, &$form_state) {
+  if (empty($element['#value']) || !valid_url($element['#value'], TRUE) ) {
+    form_error(
+      $element,
+      t(
+        'The "!name" option must contain a valid url.',
+        array('!name' => t($element['#title']))
+      )
+    );
+  }
+  $form_state['values'][$element['#name']] = rtrim($form_state['values'][$element['#name']], '/');
 }
