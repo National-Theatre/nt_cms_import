@@ -126,8 +126,8 @@ function _nt_cms_import_get_node($nid) {
  */
 function _nt_cms_import_do_call($part_url) {
   $url_parts = variable_get(
-    'nt_cms_import_cms',
-    'http://cms.nationaltheatre.develop.local'
+    'nt_cms_import_cms_www',
+    'http://www.nationaltheatre.develop.local'
   );
   $url_parts .= '/' . variable_get('nt_cms_import_cms_endpoint', 'rest');
   $url_parts .= $part_url;
